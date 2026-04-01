@@ -37,7 +37,7 @@
                 <h2 style="margin-top:0;">Cart</h2>
                 <div class="glass-card" style="padding: 16px; margin-bottom: 14px;">
                     <div id="cartArea">
-                        @if(count($cartData) > 0)
+                        @if($cartData && count($cartData) > 0)
                             <table>
                                 <thead>
                                 <tr><th>Product</th><th>Qty</th><th>Price</th><th></th></tr>
@@ -50,7 +50,10 @@
                                         <td>{{ $item['name'] }}</td>
                                         <td>{{ $item['quantity'] }}</td>
                                         <td>{{ number_format($line,2) }}</td>
-                                        <td><button class="btn btn-danger" style="font-size:12px; padding: 4px 8px;" onclick="removeFromCart({{ $productId }})">-</button></td>
+                                        <td>
+                                            <button class="btn btn-danger" style="font-size:12px; padding: 4px 8px; margin-right:4px;" onclick="removeFromCart({{ $productId }})">-</button>
+                                            <button class="btn" style="font-size:12px; padding: 4px 8px;" onclick="addToCart({{ $productId }})">+</button>
+                                        </td>
                                     </tr>
                                 @endforeach
                                 </tbody>

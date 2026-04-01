@@ -13,10 +13,14 @@ class ProductSeeder extends Seeder
      */
     public function run(): void
     {
-        Product::create(['name' => 'Apple', 'price' => 1.50, 'description' => 'Fresh red apple']);
-        Product::create(['name' => 'Banana', 'price' => 0.75, 'description' => 'Yellow banana']);
-        Product::create(['name' => 'Orange', 'price' => 2.00, 'description' => 'Juicy orange']);
-        Product::create(['name' => 'Bread', 'price' => 3.00, 'description' => 'Whole wheat bread']);
-        Product::create(['name' => 'Milk', 'price' => 2.50, 'description' => '1L milk']);
+        $fruitCategory = \App\Models\Category::firstOrCreate(['name' => 'Fruits'], ['description' => 'Fresh fruits category']);
+        $bakeryCategory = \App\Models\Category::firstOrCreate(['name' => 'Bakery'], ['description' => 'Baked goods']);
+        $dairyCategory = \App\Models\Category::firstOrCreate(['name' => 'Dairy'], ['description' => 'Dairy products']);
+
+        Product::create(['name' => 'Apple', 'price' => 1.50, 'description' => 'Fresh red apple', 'category_id' => $fruitCategory->id]);
+        Product::create(['name' => 'Banana', 'price' => 0.75, 'description' => 'Yellow banana', 'category_id' => $fruitCategory->id]);
+        Product::create(['name' => 'Orange', 'price' => 2.00, 'description' => 'Juicy orange', 'category_id' => $fruitCategory->id]);
+        Product::create(['name' => 'Bread', 'price' => 3.00, 'description' => 'Whole wheat bread', 'category_id' => $bakeryCategory->id]);
+        Product::create(['name' => 'Milk', 'price' => 2.50, 'description' => '1L milk', 'category_id' => $dairyCategory->id]);
     }
 }

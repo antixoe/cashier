@@ -9,9 +9,13 @@
             </h2>
             <p class="mt-2 text-center text-sm text-gray-600">
                 Or
-                <a href="{{ route('register') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
-                    create a new account
-                </a>
+                @if (Route::has('register'))
+                    <a href="{{ route('register') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                        create a new account
+                    </a>
+                @else
+                    <span class="text-gray-500">create a new account (disabled)</span>
+                @endif
             </p>
         </div>
         <form class="mt-8 space-y-6" method="POST" action="{{ route('login') }}">

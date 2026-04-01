@@ -2,31 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
-use App\Models\User;
 use App\Models\Role;
 use App\Models\Sale;
-use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class HomeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::all();
-        $users = User::with('roles')->paginate(10);
-        $roles = Role::with('users')->get();
-        $sales = Sale::with('saleItems', 'user')->latest()->paginate(10);
-
-        // Get cart data from session
-        $sessionId = session()->getId();
         $cartData = session()->get('cart', []);
+        $roles = Schema::hasTable('roles') ? Role::all() : collect();
+        $sales = Schema::hasTable('sales') ? Sale::orderByDesc('created_at')->limit(10)->get() : collect();
+        $users = Schema::hasTable('users') ? User::all() : collect();
+        $currentUser = auth()->user(); // Get authenticated user if logged in
+        $openLogin = $request->query('openLogin', 0);
 
-        return view('home', compact(
-            'products',
-            'users',
-            'roles',
-            'sales',
-            'cartData'
-        ));
+        return view('home', compact('cartData', 'roles', 'sales', 'users', 'currentUser', 'openLogin'));
     }
 }

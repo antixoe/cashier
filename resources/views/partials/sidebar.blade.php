@@ -4,8 +4,13 @@
         <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}">Home</a>
         @auth
             <a href="{{ route('pos.index') }}" class="{{ request()->routeIs('pos.index') ? 'active' : '' }}">Dashboard</a>
+            <a href="{{ route('management.products.index') }}" class="{{ request()->routeIs('management.products*') ? 'active' : '' }}">Products</a>
+            <a href="{{ route('management.categories') }}" class="{{ request()->routeIs('management.categories*') ? 'active' : '' }}">Categories</a>
             <a href="{{ route('management.users') }}" class="{{ request()->routeIs('management.users') ? 'active' : '' }}">Users</a>
             <a href="{{ route('management.roles') }}" class="{{ request()->routeIs('management.roles') ? 'active' : '' }}">Roles</a>
+            <a href="{{ route('reports.index') }}" class="{{ request()->routeIs('reports*') ? 'active' : '' }}">Reports</a>
+            <a href="{{ route('management.activity-logs') }}" class="{{ request()->routeIs('management.activity-logs') ? 'active' : '' }}">Activity Logs</a>
+            <a href="{{ route('settings.index') }}" class="{{ request()->routeIs('settings.index') ? 'active' : '' }}">Settings</a>
         @endauth
     </nav>
     <div class="cta">

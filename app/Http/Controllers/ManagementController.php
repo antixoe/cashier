@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Role;
+use App\Services\ActivityLogService;
 
 class ManagementController extends Controller
 {
@@ -35,6 +36,15 @@ class ManagementController extends Controller
             $user->roles()->sync([$request->role_id]);
         }
 
+        // Log activity
+        ActivityLogService::logUserCreate($user, [
+            'name' => $user->name,
+            'email' => $user->email,
+        ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'User created successfully', 'user' => $user]);
+        }
         return back()->with('success', 'User created');
     }
 
@@ -60,6 +70,11 @@ class ManagementController extends Controller
             'role_id' => 'nullable|exists:roles,id',
         ]);
 
+        $oldData = [
+            'name' => $user->name,
+            'email' => $user->email,
+        ];
+
         $user->update([
             'name' => $data['name'],
             'email' => $data['email'],
@@ -71,6 +86,12 @@ class ManagementController extends Controller
             $user->roles()->detach();
         }
 
+        // Log activity
+        ActivityLogService::logUserUpdate($user, $oldData, $data);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'User updated successfully']);
+        }
         return back()->with('success', 'User updated successfully');
     }
 
@@ -80,12 +101,21 @@ class ManagementController extends Controller
 
         // Prevent deleting the current authenticated user
         if ($user->id === auth()->id()) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Cannot delete your own account'], 403);
+            }
             return back()->with('error', 'You cannot delete your own account');
         }
+
+        // Log activity before deletion
+        ActivityLogService::logUserDelete($user);
 
         $user->roles()->detach();
         $user->delete();
 
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'User deleted successfully']);
+        }
         return back()->with('success', 'User deleted successfully');
     }
 
@@ -102,20 +132,59 @@ class ManagementController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        Role::create($request->only('name', 'description'));
+        $role = Role::create($request->only('name', 'description'));
+
+        // Log activity
+        ActivityLogService::logRoleCreate($role);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Role created successfully', 'role' => $role]);
+        }
         return back()->with('success', 'Role created');
+    }
+
+    public function roleShow($id)
+    {
+        $role = Role::findOrFail($id);
+
+        return response()->json([
+            'id' => $role->id,
+            'name' => $role->name,
+            'description' => $role->description,
+        ]);
+    }
+
+    public function roleUpdate(Request $request, $id)
+    {
+        $role = Role::findOrFail($id);
+
+        $data = $request->validate([
+            'name' => 'required|string|unique:roles,name,' . $role->id,
+            'description' => 'nullable|string',
+        ]);
+
+        $oldData = ['name' => $role->name, 'description' => $role->description];
+
+        $role->update($data);
+
+        ActivityLogService::logRoleUpdate($role, $oldData, $data);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Role updated successfully', 'role' => $role]);
+        }
+
+        return back()->with('success', 'Role updated successfully');
     }
 
     public function roleDestroy($id)
     {
         $role = Role::findOrFail($id);
         
-        if (request()->ajax()) {
-            $role->delete();
-            return response()->json(['success' => true]);
-        }
-
         $role->delete();
+        
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Role deleted successfully']);
+        }
         return back()->with('success', 'Role deleted successfully');
     }
 }

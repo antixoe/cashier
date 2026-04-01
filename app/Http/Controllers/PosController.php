@@ -8,6 +8,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Services\ActivityLogService;
 
 class PosController extends Controller
 {
@@ -40,6 +41,7 @@ class PosController extends Controller
     public function addToCart(Request $request)
     {
         $productId = $request->product_id;
+        $product = Product::findOrFail($productId);
         $cart = $this->getCart();
         $cartItem = $cart->cartItems()->where('product_id', $productId)->first();
         if ($cartItem) {
@@ -51,14 +53,20 @@ class PosController extends Controller
                 'quantity' => 1,
             ]);
         }
+
+        // Log activity
+        ActivityLogService::logAddToCart($product, 1);
+
         return response()->json(['success' => true]);
     }
 
     public function removeFromCart(Request $request)
     {
         $productId = $request->product_id;
+        $product = Product::findOrFail($productId);
         $cart = $this->getCart();
         $cartItem = $cart->cartItems()->where('product_id', $productId)->first();
+        $quantity = $cartItem ? $cartItem->quantity : 0;
         if ($cartItem) {
             if ($cartItem->quantity > 1) {
                 $cartItem->decrement('quantity');
@@ -66,6 +74,10 @@ class PosController extends Controller
                 $cartItem->delete();
             }
         }
+
+        // Log activity
+        ActivityLogService::logRemoveFromCart($product, $quantity);
+
         return response()->json(['success' => true]);
     }
 
@@ -92,6 +104,9 @@ class PosController extends Controller
                 'price' => $item->product->price,
             ]);
         }
+
+        // Log activity
+        ActivityLogService::logCheckout($sale, $total, $cartItems->count());
 
         $cart->cartItems()->delete(); // Clear cart
         return response()->json(['success' => true, 'total' => $total]);
