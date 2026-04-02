@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Services\ActivityLogService;
+use App\Services\GeoLocationService;
+use App\Services\ImageUploadService;
+use App\Models\ActivityLog;
 
 class SettingsController extends Controller
 {
@@ -15,7 +18,38 @@ class SettingsController extends Controller
     public function index()
     {
         $user = Auth::user();
-        return view('settings.profile', compact('user'));
+        
+        // Fetch activity logs - admins see all, regular users see only their own
+        if ($user->hasRole('admin')) {
+            $activityLogs = ActivityLog::with('user')
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
+            
+            // Get list of unique actions for filtering (all users)
+            $actions = ActivityLog::select('action')
+                ->distinct()
+                ->pluck('action')
+                ->toArray();
+        } else {
+            $activityLogs = ActivityLog::where('user_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
+            
+            // Get list of unique actions for filtering (user's actions only)
+            $actions = ActivityLog::where('user_id', $user->id)
+                ->select('action')
+                ->distinct()
+                ->pluck('action')
+                ->toArray();
+        }
+        
+        // Add location data to each log
+        $activityLogs->getCollection()->transform(function ($log) {
+            $log->location = GeoLocationService::getLocationFromIP($log->ip_address ?? '127.0.0.1');
+            return $log;
+        });
+        
+        return view('settings.profile', compact('user', 'activityLogs', 'actions'));
     }
 
     /**
@@ -29,7 +63,20 @@ class SettingsController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:20',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,gif,webp|max:5120',
         ]);
+
+        // Handle profile image upload
+        if ($request->hasFile('profile_image')) {
+            // Delete old image if it exists
+            if ($user->profile_image) {
+                ImageUploadService::delete($user->profile_image);
+            }
+            // Upload new image
+            $data['profile_image'] = ImageUploadService::upload($request->file('profile_image'), 'users');
+        } else {
+            unset($data['profile_image']);
+        }
 
         $oldData = [
             'name' => $user->name,

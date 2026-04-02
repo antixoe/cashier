@@ -57,11 +57,6 @@ Route::middleware('auth', 'is_admin')->group(function () {
     Route::put('/management/categories/{id}', [CategoryController::class, 'update'])->name('management.categories.update');
     Route::delete('/management/categories/{id}', [CategoryController::class, 'destroy'])->name('management.categories.destroy');
 
-    // Activity Logs
-    Route::get('/management/activity-logs', [ActivityLogController::class, 'index'])->name('management.activity-logs');
-    Route::get('/management/activity-logs/user/{userId}', [ActivityLogController::class, 'userLogs'])->name('management.user-activity-logs');
-    Route::get('/management/activity-logs/export', [ActivityLogController::class, 'export'])->name('management.activity-logs.export');
-
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export-sales', [ReportController::class, 'exportSalesReport'])->name('reports.export-sales');

@@ -14,23 +14,66 @@
 
         @if(session('success'))
             <section class="glass-card" style="background: rgba(34, 197, 94, 0.2); border-left: 4px solid rgba(34, 197, 94, 0.6);">
-                <p style="margin: 0; color: #22c55e; font-weight: 600;">✓ {{ session('success') }}</p>
+                <p style="margin: 0; color: #22c55e; font-weight: 600; display: flex; align-items: center; gap: 8px;"><i class="bi bi-check-circle-fill"></i> {{ session('success') }}</p>
             </section>
         @endif
 
         @if(session('error'))
             <section class="glass-card" style="background: rgba(239, 68, 68, 0.2); border-left: 4px solid rgba(239, 68, 68, 0.6);">
-                <p style="margin: 0; color: #ef4444; font-weight: 600;">✗ {{ session('error') }}</p>
+                <p style="margin: 0; color: #ef4444; font-weight: 600; display: flex; align-items: center; gap: 8px;"><i class="bi bi-x-circle-fill"></i> {{ session('error') }}</p>
             </section>
         @endif
 
+        <!-- Settings Navbar/Tabs -->
+        <div style="display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid rgba(255,255,255,0.2);">
+            <button type="button" onclick="switchTab('profile')" id="tab-profile" class="settings-tab active" style="padding: 12px 24px; border: none; background: rgba(253, 230, 138, 0.15); color: #f5f5f5; font-weight: 600; cursor: pointer; border-bottom: 3px solid #fde68a; margin-bottom: -2px; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-file-earmark-text" style="font-size: 18px;"></i> Profile Settings
+            </button>
+            <button type="button" onclick="switchTab('activity')" id="tab-activity" class="settings-tab" style="padding: 12px 24px; border: none; background: rgba(255,255,255,0.05); color: #d1d5db; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-graph-up" style="font-size: 18px;"></i> Activity Logs
+            </button>
+        </div>
+
         <div style="display: grid; grid-template-columns: 1fr 360px; gap: 20px;">
             <div>
-                <!-- Profile Information -->
-                <section class="glass-card">
+                <!-- Profile Settings Tab -->
+                <div id="profile-tab" style="display: block;">
+                    <!-- Profile Information -->
+                    <section class="glass-card">
                     <h2 style="margin-top: 0; color: #dc2626;">Profile Information</h2>
-                    <form id="profileForm" method="POST" action="{{ route('settings.updateProfile') }}" style="display: flex; flex-direction: column; gap: 16px;">
+                    <form id="profileForm" method="POST" action="{{ route('settings.updateProfile') }}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 16px;">
                         @csrf
+
+                        <!-- Profile Image -->
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937;">Profile Picture</label>
+                            <div style="display: flex; gap: 16px; align-items: flex-start;">
+                                <div style="flex-shrink: 0;">
+                                    @if(Auth::user()->profile_image)
+                                        <img id="profileImagePreview" src="{{ asset('storage/' . Auth::user()->profile_image) }}" alt="Profile" style="width: 120px; height: 120px; border-radius: 12px; object-fit: cover; border: 2px solid rgba(220, 38, 38, 0.5);">
+                                    @else
+                                        <div id="profileImagePreview" style="width: 120px; height: 120px; border-radius: 12px; background: rgba(220, 38, 38, 0.2); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(220, 38, 38, 0.5);">
+                                            <i class="bi bi-person-circle" style="font-size: 48px; color: #dc2626;"></i>
+                                        </div>
+                                    @endif
+                                </div>
+                                <div style="flex: 1;">
+                                    <input type="file" name="profile_image" id="profileImageInput" accept="image/*" style="display: none;">
+                                    <button type="button" onclick="document.getElementById('profileImageInput').click()" class="btn" style="background: #3b82f6; color: white; margin-bottom: 8px;">
+                                        <i class="bi bi-upload"></i> Change Picture
+                                    </button>
+                                    <p style="font-size: 12px; color: #9ca3af; margin: 0;">JPG, PNG, GIF or WebP format. Max 5MB.</p>
+                                    @if(Auth::user()->profile_image)
+                                        <button type="button" onclick="removeProfileImage()" class="btn btn-danger" style="margin-top: 8px; padding: 6px 12px; font-size: 12px;">
+                                            <i class="bi bi-trash"></i> Remove
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                            @error('profile_image')
+                                <span style="color: #ef4444; font-size: 12px; margin-top: 4px; display: block;">{{ $message }}</span>
+                            @enderror
+                        </div>
 
                         <div>
                             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937;">Full Name</label>
@@ -57,47 +100,91 @@
                         <p id="profileMessage" style="margin-top: 10px; color: #f8fafc; font-size: 14px;"></p>
                     </form>
                 </section>
+                </div>
 
-                <!-- Change Password -->
-                <section class="glass-card" style="margin-top: 20px;">
-                    <h2 style="margin-top: 0; color: #dc2626;">Change Password</h2>
-                    <form id="passwordForm" method="POST" action="{{ route('settings.updatePassword') }}" style="display: flex; flex-direction: column; gap: 16px;">
-                        @csrf
-
-                        <div>
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937;">Current Password</label>
-                            <div style="position: relative;">
-                                <input type="password" name="current_password" id="currentPassword" class="glass-input" placeholder="••••••••" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
-                                <button type="button" onclick="togglePasswordVisibility('currentPassword')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 18px;">👁️</button>
-                            </div>
-                            @error('current_password')
-                                <span style="color: #ef4444; font-size: 12px; margin-top: 4px; display: block;">{{ $message }}</span>
-                            @enderror
+                <!-- Activity Logs Tab -->
+                <div id="activity-tab" style="display: none;">
+                    <!-- Activity Logs -->
+                    <section class="glass-card" style="margin-top: 0;">
+                    <h2 style="margin-top: 0; color: #dc2626;">
+                        @if(auth()->user()->hasRole('admin'))
+                            <i class="bi bi-graph-up"></i> All User Activities
+                        @else
+                            <i class="bi bi-graph-up"></i> Your Activity Logs
+                        @endif
+                    </h2>
+                    <p style="color: #9ca3af; margin-top: 0; margin-bottom: 16px; font-size: 14px;">
+                        @if(auth()->user()->hasRole('admin'))
+                            View all users' activities, IP addresses, and geographic locations.
+                        @else
+                            View your recent actions, IP addresses, and access locations.
+                        @endif
+                    </p>
+                    <div class="table-wrap" style="overflow-x: auto;">
+                        <table style="min-width: 900px;">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    @if(auth()->user()->hasRole('admin'))
+                                        <th>User</th>
+                                    @endif
+                                    <th>Action</th>
+                                    <th>Description</th>
+                                    <th>IP Address</th>
+                                    <th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($activityLogs as $log)
+                                    <tr>
+                                        <td style="font-size: 12px; white-space: nowrap;">{{ $log->created_at->format('M d, Y H:i') }}</td>
+                                        @if(auth()->user()->hasRole('admin'))
+                                            <td style="font-size: 12px;">
+                                                @if($log->user)
+                                                    <span style="color: #fde68a;">{{ $log->user->name }}</span>
+                                                @else
+                                                    <span style="color: #9ca3af;">System</span>
+                                                @endif
+                                            </td>
+                                        @endif
+                                        <td>
+                                            <span style="display:inline-block;background:rgba(220,38,38,0.35);color:#fef9c3;border-radius:999px;padding:4px 12px;font-size:11px;font-weight:600;white-space:nowrap;">
+                                                {{ ucfirst(str_replace('_', ' ', $log->action)) }}
+                                            </span>
+                                        </td>
+                                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; font-size: 12px;">
+                                            {{ $log->description ?? '-' }}
+                                        </td>
+                                        <td style="font-size: 11px; font-family: monospace; color: #fde68a;">
+                                            {{ $log->ip_address ?? 'N/A' }}
+                                        </td>
+                                        <td style="font-size: 12px;">
+                                            @if($log->location)
+                                                <span style="color: #a78bfa;">{{ $log->location['display'] }}</span>
+                                            @else
+                                                <span style="color: #9ca3af;">-</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="{{ auth()->user()->hasRole('admin') ? '6' : '5' }}" style="text-align:center; color:#fde68a; padding: 20px;">
+                                            No activity logs found.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    @if($activityLogs->hasPages())
+                        <div style="margin-top: 16px; display: flex; justify-content: center; gap: 8px;">
+                            {{ $activityLogs->links('pagination::tailwind') }}
                         </div>
-
-                        <div>
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937;">New Password</label>
-                            <div style="position: relative;">
-                                <input type="password" name="new_password" id="newPassword" class="glass-input" placeholder="••••••••" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
-                                <button type="button" onclick="togglePasswordVisibility('newPassword')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 18px;">👁️</button>
-                            </div>
-                            @error('new_password')
-                                <span style="color: #ef4444; font-size: 12px; margin-top: 4px; display: block;">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937;">Confirm New Password</label>
-                            <div style="position: relative;">
-                                <input type="password" name="new_password_confirmation" id="confirmPassword" class="glass-input" placeholder="••••••••" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
-                                <button type="button" onclick="togglePasswordVisibility('confirmPassword')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 18px;">👁️</button>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn" style="background: #f59e0b; color: white; margin-top: 8px;">Update Password</button>
-                        <p id="passwordMessage" style="margin-top: 10px; color: #f8fafc; font-size: 14px;"></p>
-                    </form>
+                    @endif
                 </section>
+                </div>
             </div>
 
             <!-- Account Summary Sidebar -->
@@ -147,6 +234,41 @@
     </main>
 
     <script>
+        // Tab switching function
+        function switchTab(tab) {
+            // Hide all tabs
+            document.getElementById('profile-tab').style.display = 'none';
+            document.getElementById('activity-tab').style.display = 'none';
+
+            // Remove active class from all tabs
+            document.getElementById('tab-profile').classList.remove('active');
+            document.getElementById('tab-activity').classList.remove('active');
+            
+            // Reset both tabs to inactive state
+            document.getElementById('tab-profile').style.color = '#d1d5db';
+            document.getElementById('tab-profile').style.background = 'rgba(255,255,255,0.05)';
+            document.getElementById('tab-profile').style.borderBottomColor = 'transparent';
+            
+            document.getElementById('tab-activity').style.color = '#d1d5db';
+            document.getElementById('tab-activity').style.background = 'rgba(255,255,255,0.05)';
+            document.getElementById('tab-activity').style.borderBottomColor = 'transparent';
+
+            // Show selected tab and apply active styling
+            if (tab === 'profile') {
+                document.getElementById('profile-tab').style.display = 'block';
+                document.getElementById('tab-profile').classList.add('active');
+                document.getElementById('tab-profile').style.color = '#f5f5f5';
+                document.getElementById('tab-profile').style.background = 'rgba(253, 230, 138, 0.15)';
+                document.getElementById('tab-profile').style.borderBottomColor = '#fde68a';
+            } else if (tab === 'activity') {
+                document.getElementById('activity-tab').style.display = 'block';
+                document.getElementById('tab-activity').classList.add('active');
+                document.getElementById('tab-activity').style.color = '#f5f5f5';
+                document.getElementById('tab-activity').style.background = 'rgba(253, 230, 138, 0.15)';
+                document.getElementById('tab-activity').style.borderBottomColor = '#fde68a';
+            }
+        }
+
         function csrfHeaders() {
             return {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -179,10 +301,34 @@
             // Allow normal form submission for regular requests
         });
 
-        // Handle password form submission
-        document.getElementById('passwordForm')?.addEventListener('submit', function(e) {
-            // Allow normal form submission for regular requests
+        // Profile image preview
+        document.getElementById('profileImageInput')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.getElementById('profileImagePreview');
+                    if (preview.tagName === 'IMG') {
+                        preview.src = event.target.result;
+                    } else {
+                        const img = document.createElement('img');
+                        img.id = 'profileImagePreview';
+                        img.src = event.target.result;
+                        img.style.cssText = 'width: 120px; height: 120px; border-radius: 12px; object-fit: cover; border: 2px solid rgba(220, 38, 38, 0.5);';
+                        preview.parentElement.replaceChild(img, preview);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
         });
+
+        function removeProfileImage() {
+            if (confirm('Are you sure you want to remove your profile picture?')) {
+                const input = document.getElementById('profileImageInput');
+                input.value = '';
+                // You could optionally submit the form here or just clear the input
+            }
+        }
     </script>
 
 @endsection

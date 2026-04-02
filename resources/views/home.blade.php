@@ -46,6 +46,9 @@
             pointer-events: auto !important;
             z-index: 100000 !important;
         }
+        .modal-content form, .modal-content button, .modal-content input {
+            pointer-events: auto !important;
+        }
         .btn { border: none; color: #ffffff; font-weight: 700; border-radius: 14px; cursor: pointer; padding: 12px 24px; background: linear-gradient(155deg, rgba(220, 38, 38, 0.95), rgba(239, 68, 68, 0.9)); box-shadow: 0 8px 18px rgba(185, 28, 28, 0.5); transition: transform 0.2s, filter 0.2s; text-decoration: none; display: inline-block; }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
         .btn-secondary { background: linear-gradient(155deg, rgba(245, 158, 11, 0.9), rgba(251, 191, 36, 0.85)); }
@@ -235,7 +238,7 @@
             @auth
                 <a href="{{ route('pos.index') }}" class="btn">Dashboard</a>
             @else
-                <a href="{{ route('login') }}" class="btn">Login</a>
+                <a href="#" class="btn" onclick="event.preventDefault(); openLoginModal();">Login</a>
             @endauth
         </div>
     </div>
@@ -248,7 +251,7 @@
             @auth
                 <a href="{{ route('pos.index') }}" class="btn">Go to Dashboard</a>
             @else
-                <a href="{{ route('login') }}" class="btn">Get Started</a>
+                <a href="#" class="btn" onclick="event.preventDefault(); openLoginModal();">Get Started</a>
                 <a href="#features" class="btn btn-secondary">Learn More</a>
             @endauth
         </div>
@@ -350,7 +353,7 @@
             @auth
                 <a href="{{ route('pos.index') }}" class="btn">Go to Dashboard</a>
             @else
-                <a href="{{ route('login') }}" class="btn" style="font-size: 16px; padding: 16px 32px;">Get Started Now</a>
+                <a href="#" class="btn" style="font-size: 16px; padding: 16px 32px;" onclick="event.preventDefault(); openLoginModal();">Get Started Now</a>
             @endauth
         </section>
     </div>
@@ -368,27 +371,26 @@
     <div id="toastNotification" class="toast-notification"></div>
 
     <!-- Login Modal -->
-    <div class="modal-overlay" id="loginModal" style="position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(69, 10, 10, 0.68); backdrop-filter: blur(5px); z-index: 2000;">
-        <div class="modal-content" style="background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 14px 40px rgba(69, 10, 10, 0.3); border-radius: 18px; padding: 32px; color: #1f2937; max-width: 420px;">
-            <span class="modal-close" onclick="closeLoginModal()" style="position: absolute; right: 16px; top: 16px; font-size: 24px; color: #dc2626; cursor: pointer; font-weight: 700;">&times;</span>
-            <h2 style="color: #fde68a; margin: 0 0 24px 0;">Login to SupriMart</h2>
-            <div id="loginMessage"></div>
-            <form id="loginForm" method="POST" action="{{ route('login') }}">
+    <div class="modal-overlay" id="loginModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: none; align-items: center; justify-content: center; background: rgba(69, 10, 10, 0.68); backdrop-filter: blur(5px); z-index: 99999; pointer-events: auto;">
+        <div style="background: rgba(255, 255, 255, 0.95); border-radius: 18px; padding: 40px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); position: relative; pointer-events: auto;">
+            <button type="button" onclick="closeLoginModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 28px; color: #dc2626; cursor: pointer; padding: 0; width: 32px; height: 32px; pointer-events: auto;">×</button>
+            <h2 style="color: #1f2937; margin: 0 0 24px 0; font-size: 26px;">Login</h2>
+            <div id="loginMessage" style="margin-bottom: 16px;"></div>
+            <form id="loginForm" method="POST" action="{{ route('login') }}" style="pointer-events: auto;">
                 @csrf
-                <div style="margin-bottom: 16px;">
-                    <label for="loginEmail" style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937;">Email</label>
-                    <input id="loginEmail" type="email" name="email" class="glass-input" placeholder="your@email.com" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
+                <div style="margin-bottom: 16px; pointer-events: auto;">
+                    <label for="loginEmail" style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937; font-size: 14px;">Email</label>
+                    <input id="loginEmail" type="email" name="email" placeholder="your@email.com" required style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; pointer-events: auto;">
                 </div>
-                <div style="margin-bottom: 24px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937;">Password</label>
-                    <div style="position: relative;">
-                        <input id="loginPassword" type="password" name="password" class="glass-input" placeholder="••••••••" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
-                        <button type="button" onclick="togglePasswordVisibility('loginPassword')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 18px;">👁️</button>
+                <div style="margin-bottom: 20px; pointer-events: auto;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937; font-size: 14px;">Password</label>
+                    <div style="position: relative; pointer-events: auto;">
+                        <input id="loginPassword" type="password" name="password" placeholder="Enter password" required style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; pointer-events: auto;">
+                        <button type="button" onclick="toggleLoginPassword(event)" style="position: absolute; right: 10px; top: 10px; background: none; border: none; cursor: pointer; font-size: 18px; color: #666; pointer-events: auto;"><i class="bi bi-eye"></i></button>
                     </div>
                 </div>
-                <button type="submit" class="btn" style="width: 100%; margin-bottom: 12px;">Login</button>
+                <button type="submit" style="width: 100%; padding: 12px; background: #dc2626; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; pointer-events: auto;">Submit</button>
             </form>
-            <p style="text-align: center; color: #6b7280; margin: 0; font-size: 14px;">Demo credentials available upon request</p>
         </div>
     </div>
 
@@ -447,69 +449,28 @@
 
     <script>
         function openLoginModal() {
-            const modal = document.getElementById('loginModal');
-            modal.style.display = 'flex';
-            modal.style.zIndex = '99999';
-            modal.style.pointerEvents = 'auto';
-
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                modalContent.style.pointerEvents = 'auto';
-                modalContent.style.zIndex = '100000';
-            }
-
-            const emailInput = document.getElementById('loginEmail');
-            if (emailInput) {
-                emailInput.focus();
-            }
+            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('loginEmail').focus();
         }
+        
         function closeLoginModal() {
-            const modal = document.getElementById('loginModal');
-            modal.style.display = 'none';
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginMessage').innerHTML = '';
         }
-        function togglePasswordVisibility(id) {
-            const el = document.getElementById(id);
+        
+        function toggleLoginPassword(e) {
+            e.preventDefault();
+            const el = document.getElementById('loginPassword');
             el.type = el.type === 'password' ? 'text' : 'password';
         }
-
-        window.onclick = function(event) {
-            const modal = document.getElementById('loginModal');
-            if (event.target == modal) {
-                modal.style.display = 'none';
+        
+        // Close modal when clicking outside
+        document.getElementById('loginModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLoginModal();
             }
-        }
-
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const messageDiv = document.getElementById('loginMessage');
-                const formData = new FormData(this);
-
-                fetch('/login', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    messageDiv.innerHTML = '<div style="color:#059669;margin-bottom:12px;">' + data.message + '</div>';
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 700);
-                } else {
-                    messageDiv.innerHTML = '<div style="color:#dc2626;margin-bottom:12px;">' + data.message + '</div>';
-                }
-            })
-            .catch(err => {
-                messageDiv.innerHTML = '<div style="color:#dc2626;margin-bottom:12px;">An unexpected error occured.</div>';
-            });
         });
-    }
 
         @if(!empty($openLogin))
             openLoginModal();

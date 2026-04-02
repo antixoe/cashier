@@ -59,6 +59,7 @@
         .login-modal .form-group label { display: block; margin-bottom: 4px; font-weight: 600; color: #374151; }
         .login-modal .error-message { color: #dc2626; font-size: 14px; margin-top: 4px; }
         .login-modal .success-message { color: #059669; font-size: 14px; margin-top: 4px; }
+        .login-modal form, .login-modal button, .login-modal input, .login-modal label { pointer-events: auto !important; }
 
     </style>
 </head>
@@ -74,7 +75,7 @@
 
                 <div id="loginMessage"></div>
 
-                <form id="loginForm">
+                <form id="loginForm" style="pointer-events: auto;">
                     @csrf
                     <div class="form-group">
                         <label for="loginEmail">Email Address</label>
@@ -98,7 +99,7 @@
                         </label>
                     </div>
 
-                    <button type="submit" class="btn" style="width: 100%;">Sign In</button>
+                    <button type="submit" class="btn" style="width: 100%; pointer-events: auto !important; cursor: pointer; border: none; padding: 12px 20px; font-size: 14px; font-weight: 700;">Sign In</button>
                 </form>
             </div>
         </div>

@@ -15,24 +15,23 @@
         <section class="glass-card" style="display: grid; grid-template-columns: 1fr 360px; gap: 20px;">
             <div>
                 <h2 style="margin-top:0;">Products</h2>
-                <form method="GET" action="{{ route('pos.index') }}" style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; margin-bottom:12px;">
-                    <div style="flex:1; min-width:200px;">
-                        <label for="search" style="display:block; margin-bottom:4px; color:#f8fafc;">Search</label>
-                        <input id="search" name="search" type="text" value="{{ old('search', $search ?? '') }}" placeholder="Product name or product code" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;" />
-                    </div>
-                    <div style="display:flex; gap:8px; align-items:flex-end;">
-                        <button type="button" class="btn btn-secondary" style="padding: 9px 12px;" onclick="openBarcodeScanner()" title="Scan Barcode"><i class="bi bi-upc-scan"></i></button>
-                        <button type="submit" class="btn" style="padding: 9px 16px;">Apply</button>
-                        <a href="{{ route('pos.index') }}" class="btn" style="padding: 9px 16px; background: #6b7280;">Clear</a>
-                    </div>
                 <div class="table-wrap">
                     <table>
                         <thead>
-                            <tr><th>Code</th><th>Name</th><th>Price</th><th>Action</th></tr>
+                            <tr><th>Image</th><th>Code</th><th>Name</th><th>Price</th><th>Action</th></tr>
                         </thead>
                         <tbody>
                         @foreach($products as $product)
                             <tr>
+                                <td style="text-align: center;">
+                                    @if($product->image_path)
+                                        <img src="{{ asset($product->image_path) }}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px;">
+                                    @else
+                                        <div style="width: 48px; height: 48px; background: rgba(220, 38, 38, 0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-image" style="font-size: 20px; color: #dc2626;"></i>
+                                        </div>
+                                    @endif
+                                </td>
                                 <td>{{ $product->code ?? '-' }}</td>
                                 <td>{{ $product->name }}</td>
                                 <td>{{ number_format($product->price, 2) }}</td>
@@ -42,6 +41,18 @@
                         </tbody>
                     </table>
                 </div>
+
+                <form method="GET" action="{{ route('pos.index') }}" style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; margin-top:16px;">
+                    <div style="flex:1; min-width:200px;">
+                        <label for="search" style="display:block; margin-bottom:4px; color:#f8fafc;">Search</label>
+                        <input id="search" name="search" type="text" value="{{ old('search', $search ?? '') }}" placeholder="Product name or product code" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;" />
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:flex-end;">
+                        <button type="button" class="btn btn-secondary" style="padding: 9px 12px;" onclick="openBarcodeScanner()" title="Scan Barcode"><i class="bi bi-upc-scan"></i></button>
+                        <button type="submit" class="btn" style="padding: 9px 16px;">Apply</button>
+                        <a href="{{ route('pos.index') }}" class="btn" style="padding: 9px 16px; background: #6b7280;">Clear</a>
+                    </div>
+                </form>
             </div>
 
             <div>

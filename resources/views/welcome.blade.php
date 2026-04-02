@@ -34,13 +34,14 @@
                         <!-- New explicit login button to force opening modal route -->
                         <button
                             type="button"
-                            onclick="window.location.href='{{ route('home', ['openLogin' => 1]) }}'"
+                            onclick="openLoginModal();"
                             class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
                         >
                             Log in (New)
                         </button>
                         <a
-                            href="{{ route('home', ['openLogin' => 1]) }}"
+                            href="#"
+                            onclick="event.preventDefault(); openLoginModal();"
                             class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
                         >
                             Log in

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Services\ActivityLogService;
+use App\Services\ImageUploadService;
 
 class ProductController extends Controller
 {
@@ -52,7 +53,15 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0.01',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
+            'image_path' => 'nullable|image|mimes:jpeg,png,gif,webp|max:5120',
         ]);
+
+        // Handle image upload
+        if ($request->hasFile('image_path')) {
+            $data['image_path'] = ImageUploadService::upload($request->file('image_path'), 'products');
+        } else {
+            unset($data['image_path']);
+        }
 
         $product = Product::create($data);
 
@@ -95,7 +104,20 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0.01',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
+            'image_path' => 'nullable|image|mimes:jpeg,png,gif,webp|max:5120',
         ]);
+
+        // Handle image upload
+        if ($request->hasFile('image_path')) {
+            // Delete old image if exists
+            if ($product->image_path) {
+                ImageUploadService::delete($product->image_path);
+            }
+            // Upload new image
+            $data['image_path'] = ImageUploadService::upload($request->file('image_path'), 'products');
+        } else {
+            unset($data['image_path']);
+        }
 
         $oldData = [
             'code' => $product->code,

@@ -27,7 +27,7 @@
         @endif
 
         <section class="glass-card">
-            <form action="{{ route('management.products.update', $product->id) }}" method="POST">
+            <form action="{{ route('management.products.update', $product->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -82,6 +82,34 @@
                         <option value="{{ $category->id }}" {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                         @endforeach
                     </select>
+                </div>
+
+                <div style="margin-bottom: 18px;">
+                    <label for="image_path" style="display: block; margin-bottom: 8px; font-weight: 600; color: #fde68a;">Product Image</label>
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <div id="productImagePreview" style="width: 120px; height: 120px; border-radius: 12px; background: rgba(220, 38, 38, 0.2); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(220, 38, 38, 0.5); flex-shrink: 0; overflow: hidden;">
+                            @if($product->image_path)
+                                <img src="{{ asset($product->image_path) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            @else
+                                <i class="bi bi-image" style="font-size: 40px; color: #dc2626;"></i>
+                            @endif
+                        </div>
+                        <div style="flex: 1;">
+                            <input type="file" name="image_path" id="image_path" accept="image/*" style="display: none;">
+                            <button type="button" onclick="document.getElementById('image_path').click()" class="btn" style="background: #3b82f6; color: white; margin-bottom: 8px;">
+                                <i class="bi bi-upload"></i> {{ $product->image_path ? 'Change Image' : 'Choose Image' }}
+                            </button>
+                            @if($product->image_path)
+                                <button type="button" onclick="removeProductImage()" class="btn btn-danger" style="margin-left: 8px;">
+                                    <i class="bi bi-trash"></i> Remove
+                                </button>
+                            @endif
+                            <p style="font-size: 12px; color: #9ca3af; margin: 8px 0 0 0;">JPG, PNG, GIF or WebP format. Max 5MB.</p>
+                        </div>
+                    </div>
+                    @error('image_path')
+                        <span style="color: #ef4444; font-size: 12px; margin-top: 4px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="margin-bottom: 24px;">
@@ -175,6 +203,25 @@
             if (quaggaInitialized) {
                 Quagga.stop();
             }
+        }
+
+        // Product Image Preview and Remove
+        document.getElementById('image_path')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.getElementById('productImagePreview');
+                    preview.innerHTML = `<img src="${event.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function removeProductImage() {
+            document.getElementById('image_path').value = '';
+            const preview = document.getElementById('productImagePreview');
+            preview.innerHTML = '<i class="bi bi-image" style="font-size: 40px; color: #dc2626;"></i>';
         }
     </script>
 

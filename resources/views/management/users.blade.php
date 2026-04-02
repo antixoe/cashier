@@ -58,7 +58,7 @@
                 @csrf
                 <div style="margin-bottom:14px;"><label>Name</label><input type="text" name="name" class="glass-input" required></div>
                 <div style="margin-bottom:14px;"><label>Email</label><input type="email" name="email" class="glass-input" required></div>
-                <div style="margin-bottom:14px;"><label>Password</label><div style="position: relative;"><input type="password" name="password" class="glass-input" required id="userPassword"><button type="button" onclick="togglePasswordVisibility('userPassword')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #fde68a; cursor: pointer; font-size: 16px;">👁️</button></div></div>
+                <div style="margin-bottom:14px;"><label>Password</label><div style="position: relative;"><input type="password" name="password" class="glass-input" required id="userPassword"><button type="button" onclick="togglePasswordVisibility('userPassword')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #fde68a; cursor: pointer; font-size: 16px;"><i class="bi bi-eye"></i></button></div></div>
                 <div style="margin-bottom:18px;"><label>Role</label><select name="role_id" class="glass-select"><option value="">-- No Role --</option>@foreach($roles as $role)<option value="{{ $role->id }}">{{ $role->name }}</option>@endforeach</select></div>
                 <div style="text-align:right;"><button type="submit" class="btn">Save User</button></div>
             </form>
@@ -211,10 +211,10 @@
         const button = input.nextElementSibling;
         if (input.type === 'password') {
             input.type = 'text';
-            button.textContent = '🙈';
+            button.innerHTML = '<i class="bi bi-eye-slash"></i>';
         } else {
             input.type = 'password';
-            button.textContent = '👁️';
+            button.innerHTML = '<i class="bi bi-eye"></i>';
         }
     }
 </script>

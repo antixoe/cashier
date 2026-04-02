@@ -53,6 +53,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>Image</th>
                             <th>Code</th>
                             <th>Name</th>
                             <th>Price</th>
@@ -65,6 +66,15 @@
                     <tbody>
                         @forelse($products as $product)
                             <tr>
+                                <td style="text-align: center;">
+                                    @if($product->image_path)
+                                        <img src="{{ asset($product->image_path) }}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px;">
+                                    @else
+                                        <div style="width: 48px; height: 48px; background: rgba(220, 38, 38, 0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-image" style="font-size: 20px; color: #dc2626;"></i>
+                                        </div>
+                                    @endif
+                                </td>
                                 <td>{{ $product->code ?? '-' }}</td>
                                 <td><strong>{{ $product->name }}</strong></td>
                                 <td>
@@ -93,7 +103,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" style="text-align:center; color:#fde68a;">No products found. <a href="javascript:void(0)" onclick="openAddProductModal()" style="color:#fef9c3; text-decoration: underline; cursor: pointer;">Create one</a></td>
+                                <td colspan="8" style="text-align:center; color:#fde68a;">No products found. <a href="javascript:void(0)" onclick="openAddProductModal()" style="color:#fef9c3; text-decoration: underline; cursor: pointer;">Create one</a></td>
                             </tr>
                         @endforelse
                     </tbody>
