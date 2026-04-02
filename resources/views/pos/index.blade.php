@@ -20,30 +20,11 @@
                         <label for="search" style="display:block; margin-bottom:4px; color:#f8fafc;">Search</label>
                         <input id="search" name="search" type="text" value="{{ old('search', $search ?? '') }}" placeholder="Product name or product code" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;" />
                     </div>
-                    <div style="flex:1; min-width:180px;">
-                        <label for="category" style="display:block; margin-bottom:4px; color:#f8fafc;">Category</label>
-                        <select id="category" name="category_id" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                            <option value="">All Categories</option>
-                            @foreach($categories as $category)
-                                <option value="{{ $category->id }}" @if(isset($categoryId) && $categoryId == $category->id) selected @endif>{{ $category->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div style="flex:1; min-width:160px;">
-                        <label for="sort" style="display:block; margin-bottom:4px; color:#f8fafc;">Sort By</label>
-                        <select id="sort" name="sort" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
-                            <option value="">Default</option>
-                            <option value="name_asc" @if(isset($sort) && $sort === 'name_asc') selected @endif>Name ↑</option>
-                            <option value="name_desc" @if(isset($sort) && $sort === 'name_desc') selected @endif>Name ↓</option>
-                            <option value="price_asc" @if(isset($sort) && $sort === 'price_asc') selected @endif>Price ↑</option>
-                            <option value="price_desc" @if(isset($sort) && $sort === 'price_desc') selected @endif>Price ↓</option>
-                        </select>
-                    </div>
-                    <div style="display:flex; gap:8px;">
+                    <div style="display:flex; gap:8px; align-items:flex-end;">
+                        <button type="button" class="btn btn-secondary" style="padding: 9px 12px;" onclick="openBarcodeScanner()" title="Scan Barcode"><i class="bi bi-upc-scan"></i></button>
                         <button type="submit" class="btn" style="padding: 9px 16px;">Apply</button>
                         <a href="{{ route('pos.index') }}" class="btn" style="padding: 9px 16px; background: #6b7280;">Clear</a>
                     </div>
-                </form>
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -93,6 +74,7 @@
                             <p style="margin: 0;">Cart is empty.</p>
                         @endif
                     </div>
+                    <button type="button" class="btn btn-secondary" style="width:100%; margin-bottom: 10px;" onclick="openBarcodeScannerForCart()" title="Scan Product to Add"><i class="bi bi-upc-scan"></i> Scan Product</button>
                     <button class="btn" style="width:100%;" onclick="checkout()">Checkout</button>
                     <p id="checkoutMessage" style="margin-top: 10px; color: #f8fafc;"></p>
                     <div id="toastNotification" class="toast-notification" style="position: fixed; bottom: 18px; right: 18px; min-width: 220px; padding: 12px 16px; border-radius: 10px; color: #ffffff; font-weight: 700; box-shadow: 0 10px 26px rgba(0,0,0,0.35); opacity: 0; transform: translateY(24px); transition: opacity 0.25s ease, transform 0.25s ease; z-index: 999999; display: none; pointer-events: none;"></div>
@@ -108,6 +90,18 @@
                 </div>
             </div>
         </section>
+
+        <!-- Barcode Scanner Modal -->
+        <div id="barcodeModal" class="modal-overlay">
+            <div class="modal-content" style="max-width: 600px;">
+                <span class="modal-close" onclick="closeBarcodeScanner()">&times;</span>
+                <h3>Scan Barcode</h3>
+                <p>Position the barcode in front of your camera.</p>
+                <div id="barcode-container" style="width: 100%; height: 300px; background: #000; border-radius: 8px; margin: 20px 0;"></div>
+                <button type="button" class="btn btn-danger" onclick="closeBarcodeScanner()">Cancel</button>
+            </div>
+        </div>
+
     </main>
 
     <script>
@@ -188,6 +182,103 @@
                 if (el) el.innerText = message;
                 showToast(message, false);
             });
+        }
+    </script>
+
+    <!-- QuaggaJS for Barcode Scanning -->
+    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+    <script>
+        let quaggaInitialized = false;
+        let scanMode = 'search'; // 'search' or 'cart'
+
+        function openBarcodeScanner() {
+            scanMode = 'search';
+            openScanner();
+        }
+
+        function openBarcodeScannerForCart() {
+            scanMode = 'cart';
+            openScanner();
+        }
+
+        function openScanner() {
+            document.getElementById('barcodeModal').style.display = 'flex';
+            if (!quaggaInitialized) {
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: document.querySelector('#barcode-container'),
+                        constraints: {
+                            width: 640,
+                            height: 480,
+                            facingMode: "environment" // Use back camera
+                        }
+                    },
+                    locator: {
+                        patchSize: "medium",
+                        halfSample: true
+                    },
+                    numOfWorkers: 2,
+                    decoder: {
+                        readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "upc_reader", "upc_e_reader"]
+                    },
+                    locate: true
+                }, function(err) {
+                    if (err) {
+                        console.error(err);
+                        alert('Unable to access camera. Please check permissions.');
+                        closeBarcodeScanner();
+                        return;
+                    }
+                    quaggaInitialized = true;
+                    Quagga.start();
+                });
+
+                Quagga.onDetected(function(result) {
+                    const code = result.codeResult.code;
+                    console.log('Barcode detected:', code);
+                    closeBarcodeScanner();
+                    handleScannedCode(code);
+                });
+            } else {
+                Quagga.start();
+            }
+        }
+
+        function handleScannedCode(code) {
+            if (scanMode === 'search') {
+                // Set the search input and submit
+                document.getElementById('search').value = code;
+                document.querySelector('form').submit();
+            } else if (scanMode === 'cart') {
+                // Find product by code and add to cart
+                fetch('{{ route('pos.findProductByCode') }}', {
+                    method: 'POST',
+                    headers: csrfHeaders(),
+                    body: JSON.stringify({ code: code })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.product) {
+                        addToCart(data.product.id);
+                        showToast('Product added to cart: ' + data.product.name, true);
+                    } else {
+                        showToast('Product not found for code: ' + code, false);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error finding product:', err);
+                    showToast('Error scanning product', false);
+                });
+            }
+        }
+
+        function closeBarcodeScanner() {
+            document.getElementById('barcodeModal').style.display = 'none';
+            if (quaggaInitialized) {
+                Quagga.stop();
+            }
         }
     </script>
 @endsection

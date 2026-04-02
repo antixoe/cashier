@@ -143,6 +143,18 @@ class PosController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function findProductByCode(Request $request)
+    {
+        $code = $request->code;
+        $product = Product::where('code', $code)->first();
+
+        if ($product) {
+            return response()->json(['success' => true, 'product' => $product]);
+        } else {
+            return response()->json(['success' => false, 'message' => 'Product not found']);
+        }
+    }
+
     public function checkout(Request $request)
     {
         $cart = $this->getCart();

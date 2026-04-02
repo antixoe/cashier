@@ -33,17 +33,19 @@
 
                 <div style="margin-bottom: 18px;">
                     <label for="code" style="display: block; margin-bottom: 8px; font-weight: 600; color: #fde68a;">Product Code *</label>
-                    <input 
-                        type="text" 
-                        name="code" 
-                        id="code" 
-                        class="glass-input" 
-                        placeholder="Enter product code (e.g. FRU-001)"
-                        value="{{ old('code', $product->code) }}"
-                        required
-                    >
-                </div>
-
+                    <div style="display: flex; gap: 8px;">
+                        <input 
+                            type="text" 
+                            name="code" 
+                            id="code" 
+                            class="glass-input"
+                            placeholder="Enter product code (e.g. FRU-001)"
+                            value="{{ old('code', $product->code) }}"
+                            required
+                            style="flex: 1;"
+                        >
+                        <button type="button" class="btn btn-secondary" onclick="openBarcodeScanner()" title="Scan Barcode"><i class="bi bi-upc-scan"></i></button>
+                    </div>
                 <div style="margin-bottom: 18px;">
                     <label for="name" style="display: block; margin-bottom: 8px; font-weight: 600; color: #fde68a;">Product Name *</label>
                     <input 
@@ -104,7 +106,77 @@
                 </div>
             </form>
         </section>
+
+        <!-- Barcode Scanner Modal -->
+        <div id="barcodeModal" class="modal-overlay" style="position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(69, 10, 10, 0.68); backdrop-filter: blur(5px); z-index: 3000;">
+            <div class="modal-content" style="max-width: 600px;">
+                <span class="modal-close" onclick="closeBarcodeScanner()" style="position: absolute; right: 14px; top: 12px; font-size: 24px; color: #dc2626; cursor: pointer; font-weight: 700;">&times;</span>
+                <h3>Scan Barcode</h3>
+                <p>Position the barcode in front of your camera.</p>
+                <div id="barcode-container" style="width: 100%; height: 300px; background: #000; border-radius: 8px; margin: 20px 0;"></div>
+                <button type="button" class="btn btn-danger" onclick="closeBarcodeScanner()">Cancel</button>
+            </div>
+        </div>
+
     </main>
+
+    <!-- QuaggaJS for Barcode Scanning -->
+    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+    <script>
+        let quaggaInitialized = false;
+
+        function openBarcodeScanner() {
+            document.getElementById('barcodeModal').style.display = 'flex';
+            if (!quaggaInitialized) {
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: document.querySelector('#barcode-container'),
+                        constraints: {
+                            width: 640,
+                            height: 480,
+                            facingMode: "environment"
+                        }
+                    },
+                    locator: {
+                        patchSize: "medium",
+                        halfSample: true
+                    },
+                    numOfWorkers: 2,
+                    decoder: {
+                        readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "upc_reader", "upc_e_reader"]
+                    },
+                    locate: true
+                }, function(err) {
+                    if (err) {
+                        console.error(err);
+                        alert('Unable to access camera. Please check permissions.');
+                        closeBarcodeScanner();
+                        return;
+                    }
+                    quaggaInitialized = true;
+                    Quagga.start();
+                });
+
+                Quagga.onDetected(function(result) {
+                    const code = result.codeResult.code;
+                    console.log('Barcode detected:', code);
+                    closeBarcodeScanner();
+                    document.getElementById('code').value = code;
+                });
+            } else {
+                Quagga.start();
+            }
+        }
+
+        function closeBarcodeScanner() {
+            document.getElementById('barcodeModal').style.display = 'none';
+            if (quaggaInitialized) {
+                Quagga.stop();
+            }
+        }
+    </script>
 
     <style>
         .glass-textarea {

@@ -18,6 +18,7 @@ Route::middleware(['auth', 'is_cashier'])->group(function () {
     Route::get('/pos/history', [PosController::class, 'history'])->name('pos.history');
     Route::post('/add-to-cart', [PosController::class, 'addToCart'])->name('pos.addToCart');
     Route::post('/remove-from-cart', [PosController::class, 'removeFromCart'])->name('pos.removeFromCart');
+    Route::post('/find-product-by-code', [PosController::class, 'findProductByCode'])->name('pos.findProductByCode');
     Route::post('/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
 });
 
