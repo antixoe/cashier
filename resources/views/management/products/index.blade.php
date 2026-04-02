@@ -53,6 +53,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>Code</th>
                             <th>Name</th>
                             <th>Price</th>
                             <th>Category</th>
@@ -64,6 +65,7 @@
                     <tbody>
                         @forelse($products as $product)
                             <tr>
+                                <td>{{ $product->code ?? '-' }}</td>
                                 <td><strong>{{ $product->name }}</strong></td>
                                 <td>
                                     <span style="display:inline-block;background:rgba(34,197,94,0.35);color:#fef9c3;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;">
@@ -135,6 +137,11 @@
                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
                 
                 <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Product Code *</label>
+                    <input type="text" name="code" class="glass-input" placeholder="Product code (e.g. FRU-001)" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
+                </div>
+
+                <div>
                     <label style="display: block; margin-bottom: 8px; font-weight: 600;">Product Name *</label>
                     <input type="text" name="name" class="glass-input" placeholder="Product name" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
                 </div>
@@ -172,6 +179,10 @@
             <h3 style="margin: 0 0 24px 0; color: #dc2626; font-size: 22px;">Edit Product</h3>
             <form id="editProductForm" style="display: flex; flex-direction: column; gap: 16px;">
                 <input type="hidden" id="editProductId" name="product_id" value="">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Product Code *</label>
+                    <input type="text" id="editProductCode" name="code" class="glass-input" placeholder="Product code (e.g. FRU-001)" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
+                </div>
                 <div>
                     <label style="display: block; margin-bottom: 8px; font-weight: 600;">Product Name *</label>
                     <input type="text" id="editProductName" name="name" class="glass-input" placeholder="Product name" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
@@ -235,6 +246,7 @@
                 })
                 .then(product => {
                     document.getElementById('editProductId').value = product.id;
+                    document.getElementById('editProductCode').value = product.code || '';
                     document.getElementById('editProductName').value = product.name;
                     document.getElementById('editProductPrice').value = product.price;
                     document.getElementById('editProductCategory').value = product.category_id || '';
@@ -254,6 +266,7 @@
             const form = document.getElementById('addProductForm');
             const formData = new FormData(form);
             const data = {
+                code: formData.get('code'),
                 name: formData.get('name'),
                 price: parseFloat(formData.get('price')),
                 category_id: formData.get('category_id') || null,
@@ -284,11 +297,12 @@
 
         function submitEditProduct() {
             const productId = document.getElementById('editProductId').value;
+            const code = document.getElementById('editProductCode').value.trim();
             const name = document.getElementById('editProductName').value.trim();
             const price = parseFloat(document.getElementById('editProductPrice').value);
             const description = document.getElementById('editProductDescription').value.trim() || null;
 
-            if (!name || isNaN(price) || price <= 0) {
+            if (!code || !name || isNaN(price) || price <= 0) {
                 alert('Please fill in all required fields with valid values');
                 return;
             }
@@ -296,7 +310,7 @@
             fetch('{{ url('/management/products') }}/' + productId, {
                 method: 'PUT',
                 headers: csrfHeaders(),
-                body: JSON.stringify({ name, price, category_id: document.getElementById('editProductCategory').value || null, description })
+                body: JSON.stringify({ code, name, price, category_id: document.getElementById('editProductCategory').value || null, description })
             }).then(r => {
                 if (r.ok) {
                     alert('Product updated successfully!');

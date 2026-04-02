@@ -44,15 +44,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Checkout
-    document.getElementById('checkout').addEventListener('click', function() {
-        fetch('/checkout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({})
-        })
+    const checkoutButton = document.getElementById('checkout');
+    if (checkoutButton) {
+        checkoutButton.addEventListener('click', function() {
+            fetch('/checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({})
+            })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -62,7 +64,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert(data.message);
             }
         });
-    });
+        });
+    }
 
     // Calculate total
     function calculateTotal() {

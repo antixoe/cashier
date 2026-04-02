@@ -38,9 +38,41 @@
         .navbar nav a { color: #fef3c7; text-decoration: none; font-weight: 600; transition: all 0.2s; }
         .navbar nav a:hover { color: #fde68a; }
         .navbar .cta { display: flex; gap: 12px; }
+        .modal-overlay {
+            pointer-events: auto !important;
+            z-index: 99999 !important;
+        }
+        .modal-content {
+            pointer-events: auto !important;
+            z-index: 100000 !important;
+        }
         .btn { border: none; color: #ffffff; font-weight: 700; border-radius: 14px; cursor: pointer; padding: 12px 24px; background: linear-gradient(155deg, rgba(220, 38, 38, 0.95), rgba(239, 68, 68, 0.9)); box-shadow: 0 8px 18px rgba(185, 28, 28, 0.5); transition: transform 0.2s, filter 0.2s; text-decoration: none; display: inline-block; }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
         .btn-secondary { background: linear-gradient(155deg, rgba(245, 158, 11, 0.9), rgba(251, 191, 36, 0.85)); }
+
+        .toast-notification {
+            position: fixed;
+            bottom: 18px;
+            right: 18px;
+            min-width: 240px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            z-index: 999999;
+            display: none;
+            pointer-events: none;
+        }
+
+        .toast-notification.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
 
         /* Hero Section */
         .hero {
@@ -203,7 +235,7 @@
             @auth
                 <a href="{{ route('pos.index') }}" class="btn">Dashboard</a>
             @else
-                <button class="btn" onclick="openLoginModal()">Login</button>
+                <a href="{{ route('login') }}" class="btn">Login</a>
             @endauth
         </div>
     </div>
@@ -216,7 +248,7 @@
             @auth
                 <a href="{{ route('pos.index') }}" class="btn">Go to Dashboard</a>
             @else
-                <button class="btn" onclick="openLoginModal()">Get Started</button>
+                <a href="{{ route('login') }}" class="btn">Get Started</a>
                 <a href="#features" class="btn btn-secondary">Learn More</a>
             @endauth
         </div>
@@ -318,7 +350,7 @@
             @auth
                 <a href="{{ route('pos.index') }}" class="btn">Go to Dashboard</a>
             @else
-                <button class="btn" onclick="openLoginModal()" style="font-size: 16px; padding: 16px 32px;">Get Started Now</button>
+                <a href="{{ route('login') }}" class="btn" style="font-size: 16px; padding: 16px 32px;">Get Started Now</a>
             @endauth
         </section>
     </div>
@@ -333,6 +365,8 @@
         <p style="font-size: 12px; color: #94a3b8;">Address: Indonesia | Email: info@suprimart.local</p>
     </footer>
 
+    <div id="toastNotification" class="toast-notification"></div>
+
     <!-- Login Modal -->
     <div class="modal-overlay" id="loginModal" style="position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(69, 10, 10, 0.68); backdrop-filter: blur(5px); z-index: 2000;">
         <div class="modal-content" style="background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 14px 40px rgba(69, 10, 10, 0.3); border-radius: 18px; padding: 32px; color: #1f2937; max-width: 420px;">
@@ -342,13 +376,13 @@
             <form id="loginForm" method="POST" action="{{ route('login') }}">
                 @csrf
                 <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937;">Email</label>
-                    <input type="email" name="email" class="glass-input" placeholder="your@email.com" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
+                    <label for="loginEmail" style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937;">Email</label>
+                    <input id="loginEmail" type="email" name="email" class="glass-input" placeholder="your@email.com" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
                 </div>
                 <div style="margin-bottom: 24px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937;">Password</label>
                     <div style="position: relative;">
-                        <input type="password" name="password" class="glass-input" placeholder="••••••••" required id="loginPassword" style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
+                        <input id="loginPassword" type="password" name="password" class="glass-input" placeholder="••••••••" required style="width: 100%; height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.5); background: rgba(255,255,255,0.85); color: #1f2937; outline: none; font-size: 16px;">
                         <button type="button" onclick="togglePasswordVisibility('loginPassword')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 18px;">👁️</button>
                     </div>
                 </div>
@@ -413,10 +447,25 @@
 
     <script>
         function openLoginModal() {
-            document.getElementById('loginModal').style.display = 'flex';
+            const modal = document.getElementById('loginModal');
+            modal.style.display = 'flex';
+            modal.style.zIndex = '99999';
+            modal.style.pointerEvents = 'auto';
+
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.style.pointerEvents = 'auto';
+                modalContent.style.zIndex = '100000';
+            }
+
+            const emailInput = document.getElementById('loginEmail');
+            if (emailInput) {
+                emailInput.focus();
+            }
         }
         function closeLoginModal() {
-            document.getElementById('loginModal').style.display = 'none';
+            const modal = document.getElementById('loginModal');
+            modal.style.display = 'none';
         }
         function togglePasswordVisibility(id) {
             const el = document.getElementById(id);
@@ -430,12 +479,14 @@
             }
         }
 
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const messageDiv = document.getElementById('loginMessage');
-            const formData = new FormData(this);
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const messageDiv = document.getElementById('loginMessage');
+                const formData = new FormData(this);
 
-            fetch('/login', {
+                fetch('/login', {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -458,6 +509,7 @@
                 messageDiv.innerHTML = '<div style="color:#dc2626;margin-bottom:12px;">An unexpected error occured.</div>';
             });
         });
+    }
 
         @if(!empty($openLogin))
             openLoginModal();
@@ -669,11 +721,37 @@
             fetch('{{ route('pos.removeFromCart') }}', { method: 'POST', headers: csrfHeaders(), body: JSON.stringify({ product_id: id }) }).then(() => location.reload());
         }
 
+        function showToast(message, success = true) {
+            const toast = document.getElementById('toastNotification');
+            if (!toast) return;
+
+            toast.textContent = message;
+            toast.style.background = success ? 'linear-gradient(155deg, #059669, #10b981)' : 'linear-gradient(155deg, #dc2626, #ef4444)';
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3200);
+        }
+
         function checkout() {
             fetch('{{ route('pos.checkout') }}', { method: 'POST', headers: csrfHeaders(), body: JSON.stringify({}) }).then(r => r.json()).then(data => {
                 const el = document.getElementById('checkoutMessage');
-                if (data.success) { el.innerText = 'Checkout successful: Rp ' + parseFloat(data.total).toFixed(0); setTimeout(() => location.reload(), 1000); }
-                else { el.innerText = data.message || 'Checkout failed'; }
+                if (data.success) {
+                    const message = 'Checkout successful: Rp ' + parseFloat(data.total).toFixed(0);
+                    if (el) el.innerText = message;
+                    showToast(message, true);
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    const message = data.message || 'Checkout failed.';
+                    if (el) el.innerText = message;
+                    showToast(message, false);
+                }
+            }).catch(err => {
+                const message = 'Checkout failed. Check connection or server.';
+                const el = document.getElementById('checkoutMessage');
+                if (el) el.innerText = message;
+                showToast(message, false);
             });
         }
 

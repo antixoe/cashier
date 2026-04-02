@@ -31,6 +31,19 @@
                 @csrf
 
                 <div style="margin-bottom: 18px;">
+                    <label for="code" style="display: block; margin-bottom: 8px; font-weight: 600; color: #fde68a;">Product Code *</label>
+                    <input 
+                        type="text" 
+                        name="code" 
+                        id="code" 
+                        class="glass-input" 
+                        placeholder="Enter product code (e.g. FRU-001)"
+                        value="{{ old('code') }}"
+                        required
+                    >
+                </div>
+
+                <div style="margin-bottom: 18px;">
                     <label for="name" style="display: block; margin-bottom: 8px; font-weight: 600; color: #fde68a;">Product Name *</label>
                     <input 
                         type="text" 

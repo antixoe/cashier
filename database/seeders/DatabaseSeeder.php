@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
     {
         // Create roles
         $adminRole = \App\Models\Role::firstOrCreate(['name' => 'admin'], ['description' => 'Administrator']);
+        $cashierRole = \App\Models\Role::firstOrCreate(['name' => 'cashier'], ['description' => 'Cashier role with limited permissions']);
         $customerRole = \App\Models\Role::firstOrCreate(['name' => 'customer'], ['description' => 'Customer']);
 
         // Admin user
@@ -41,6 +42,13 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Test User', 'password' => bcrypt('password')]
         );
         $testUser->roles()->syncWithoutDetaching([$customerRole->id]);
+
+        // Cashier user
+        $cashierUser = User::firstOrCreate(
+            ['email' => 'cashier@example.com'],
+            ['name' => 'Cashier', 'password' => bcrypt('password')]
+        );
+        $cashierUser->roles()->syncWithoutDetaching([$cashierRole->id]);
 
         $this->call(ProductSeeder::class);
     }

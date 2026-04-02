@@ -13,8 +13,9 @@ use App\Http\Controllers\SettingsController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'is_cashier'])->group(function () {
     Route::get('/dashboard', [PosController::class, 'index'])->name('pos.index');
+    Route::get('/pos/history', [PosController::class, 'history'])->name('pos.history');
     Route::post('/add-to-cart', [PosController::class, 'addToCart'])->name('pos.addToCart');
     Route::post('/remove-from-cart', [PosController::class, 'removeFromCart'])->name('pos.removeFromCart');
     Route::post('/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
@@ -23,8 +24,6 @@ Route::middleware('auth')->group(function () {
 Route::get('/pos', function () {
     return redirect()->route('pos.index');
 });
-Route::post('/remove-from-cart', [PosController::class, 'removeFromCart'])->name('pos.removeFromCart');
-Route::post('/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
 
 // Management - Admin-only routes
 Route::middleware('auth', 'is_admin')->group(function () {
@@ -75,9 +74,7 @@ Route::middleware('auth', 'is_admin')->group(function () {
 });
 
 // Authentication routes
-Route::get('/login', function () {
-    return redirect()->route('home', ['openLogin' => 1]);
-})->name('login');
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 
 // Registration routes

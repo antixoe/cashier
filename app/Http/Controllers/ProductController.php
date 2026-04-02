@@ -47,6 +47,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
+            'code' => 'required|string|max:100|unique:products,code',
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0.01',
             'description' => 'nullable|string',
@@ -89,6 +90,7 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
 
         $data = $request->validate([
+            'code' => 'required|string|max:100|unique:products,code,' . $product->id,
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0.01',
             'description' => 'nullable|string',
@@ -96,6 +98,7 @@ class ProductController extends Controller
         ]);
 
         $oldData = [
+            'code' => $product->code,
             'name' => $product->name,
             'price' => $product->price,
             'description' => $product->description,

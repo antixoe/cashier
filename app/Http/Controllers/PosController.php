@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\Category;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Cart;
@@ -22,9 +23,38 @@ class PosController extends Controller
         return $cart;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::all();
+        $search = $request->query('search');
+        $categoryId = $request->query('category_id');
+        $sort = $request->query('sort');
+
+        $productsQuery = Product::with('category');
+
+        if ($search) {
+            $productsQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('code', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($categoryId) {
+            $productsQuery->where('category_id', $categoryId);
+        }
+
+        if ($sort === 'price_asc') {
+            $productsQuery->orderBy('price', 'asc');
+        } elseif ($sort === 'price_desc') {
+            $productsQuery->orderBy('price', 'desc');
+        } elseif ($sort === 'name_desc') {
+            $productsQuery->orderBy('name', 'desc');
+        } else {
+            $productsQuery->orderBy('name', 'asc');
+        }
+
+        $products = $productsQuery->get();
+        $categories = Category::orderBy('name')->get();
+
         $cart = $this->getCart();
         $cartItems = $cart->cartItems()->with('product')->get();
         $cartData = [];
@@ -35,7 +65,39 @@ class PosController extends Controller
                 'quantity' => $item->quantity,
             ];
         }
-        return view('pos.index', compact('products', 'cartData'));
+        return view('pos.index', compact('products', 'cartData', 'categories', 'search', 'categoryId', 'sort'));
+
+    }
+
+    public function history(Request $request)
+    {
+        $search = $request->query('search');
+        $sort = $request->query('sort');
+
+        $salesQuery = Sale::with('saleItems.product');
+
+        if ($search) {
+            $salesQuery = $salesQuery->where(function ($q) use ($search) {
+                $q->where('id', $search)
+                  ->orWhereHas('saleItems.product', function ($q2) use ($search) {
+                      $q2->where('name', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+
+        if ($sort === 'total_asc') {
+            $salesQuery->orderBy('total', 'asc');
+        } elseif ($sort === 'total_desc') {
+            $salesQuery->orderBy('total', 'desc');
+        } elseif ($sort === 'date_asc') {
+            $salesQuery->orderBy('created_at', 'asc');
+        } else {
+            $salesQuery->orderBy('created_at', 'desc');
+        }
+
+        $sales = $salesQuery->paginate(15)->withQueryString();
+
+        return view('pos.history', compact('sales', 'search', 'sort'));
     }
 
     public function addToCart(Request $request)
@@ -109,6 +171,22 @@ class PosController extends Controller
         ActivityLogService::logCheckout($sale, $total, $cartItems->count());
 
         $cart->cartItems()->delete(); // Clear cart
-        return response()->json(['success' => true, 'total' => $total]);
+
+        $invoiceItems = $cartItems->map(function ($item) {
+            return [
+                'product' => $item->product->name,
+                'price' => $item->product->price,
+                'quantity' => $item->quantity,
+                'line' => $item->product->price * $item->quantity,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'total' => $total,
+            'sale_id' => $sale->id,
+            'items' => $invoiceItems,
+            'date' => $sale->created_at->toDateTimeString(),
+        ]);
     }
 }

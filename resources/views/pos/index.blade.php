@@ -15,14 +15,44 @@
         <section class="glass-card" style="display: grid; grid-template-columns: 1fr 360px; gap: 20px;">
             <div>
                 <h2 style="margin-top:0;">Products</h2>
+                <form method="GET" action="{{ route('pos.index') }}" style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; margin-bottom:12px;">
+                    <div style="flex:1; min-width:200px;">
+                        <label for="search" style="display:block; margin-bottom:4px; color:#f8fafc;">Search</label>
+                        <input id="search" name="search" type="text" value="{{ old('search', $search ?? '') }}" placeholder="Product name or product code" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;" />
+                    </div>
+                    <div style="flex:1; min-width:180px;">
+                        <label for="category" style="display:block; margin-bottom:4px; color:#f8fafc;">Category</label>
+                        <select id="category" name="category_id" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                            <option value="">All Categories</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}" @if(isset($categoryId) && $categoryId == $category->id) selected @endif>{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div style="flex:1; min-width:160px;">
+                        <label for="sort" style="display:block; margin-bottom:4px; color:#f8fafc;">Sort By</label>
+                        <select id="sort" name="sort" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                            <option value="">Default</option>
+                            <option value="name_asc" @if(isset($sort) && $sort === 'name_asc') selected @endif>Name ↑</option>
+                            <option value="name_desc" @if(isset($sort) && $sort === 'name_desc') selected @endif>Name ↓</option>
+                            <option value="price_asc" @if(isset($sort) && $sort === 'price_asc') selected @endif>Price ↑</option>
+                            <option value="price_desc" @if(isset($sort) && $sort === 'price_desc') selected @endif>Price ↓</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="submit" class="btn" style="padding: 9px 16px;">Apply</button>
+                        <a href="{{ route('pos.index') }}" class="btn" style="padding: 9px 16px; background: #6b7280;">Clear</a>
+                    </div>
+                </form>
                 <div class="table-wrap">
                     <table>
                         <thead>
-                            <tr><th>Name</th><th>Price</th><th>Action</th></tr>
+                            <tr><th>Code</th><th>Name</th><th>Price</th><th>Action</th></tr>
                         </thead>
                         <tbody>
                         @foreach($products as $product)
                             <tr>
+                                <td>{{ $product->code ?? '-' }}</td>
                                 <td>{{ $product->name }}</td>
                                 <td>{{ number_format($product->price, 2) }}</td>
                                 <td><button class="btn" onclick="addToCart({{ $product->id }})">Add to Cart</button></td>
@@ -65,6 +95,16 @@
                     </div>
                     <button class="btn" style="width:100%;" onclick="checkout()">Checkout</button>
                     <p id="checkoutMessage" style="margin-top: 10px; color: #f8fafc;"></p>
+                    <div id="toastNotification" class="toast-notification" style="position: fixed; bottom: 18px; right: 18px; min-width: 220px; padding: 12px 16px; border-radius: 10px; color: #ffffff; font-weight: 700; box-shadow: 0 10px 26px rgba(0,0,0,0.35); opacity: 0; transform: translateY(24px); transition: opacity 0.25s ease, transform 0.25s ease; z-index: 999999; display: none; pointer-events: none;"></div>
+                    <div id="invoiceModal" style="position: fixed; inset:0; background: rgba(0,0,0,0.65); display:none; align-items:center; justify-content:center; z-index:100000;">
+                        <div style="background:#fff; color:#111; border-radius:16px; padding:24px; width:min(92vw,550px); max-height:87vh; overflow:auto; box-shadow:0 16px 38px rgba(0,0,0,0.35);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                                <h3 style="margin: 0;">Invoice</h3>
+                                <button style="border:none; background:none; font-size:20px; cursor:pointer;" onclick="closeInvoice()">&times;</button>
+                            </div>
+                            <div id="invoiceContent"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -80,11 +120,73 @@
         function removeFromCart(id) {
             fetch('{{ route('pos.removeFromCart') }}', { method: 'POST', headers: csrfHeaders(), body: JSON.stringify({ product_id: id }) }).then(() => location.reload());
         }
+        function showToast(message, success = true) {
+            const toast = document.getElementById('toastNotification');
+            if (!toast) return;
+
+            toast.textContent = message;
+            toast.style.background = success ? 'linear-gradient(155deg, #059669, #10b981)' : 'linear-gradient(155deg, #dc2626, #ef4444)';
+            toast.style.display = 'block';
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(24px)';
+                setTimeout(() => toast.style.display = 'none', 200);
+            }, 3000);
+        }
+
+        function closeInvoice() {
+            document.getElementById('invoiceModal').style.display = 'none';
+        }
+
         function checkout() {
             fetch('{{ route('pos.checkout') }}', { method: 'POST', headers: csrfHeaders(), body: JSON.stringify({}) }).then(r => r.json()).then(data => {
                 const el = document.getElementById('checkoutMessage');
-                if (data.success) { el.innerText = 'Checkout successful: $' + parseFloat(data.total).toFixed(2); setTimeout(() => location.reload(), 1000); }
-                else { el.innerText = data.message || 'Checkout failed'; }
+                if (data.success) {
+                    const message = 'Checkout successful: Rp ' + parseFloat(data.total).toFixed(0);
+                    if (el) el.innerText = message;
+                    showToast(message, true);
+
+                    const invoiceEl = document.getElementById('invoiceContent');
+                    if (invoiceEl) {
+                        let itemsHtml = '<table style="width:100%; border-collapse: collapse; margin-top:12px;">';
+                        itemsHtml += '<thead><tr><th style="text-align:left; border-bottom:1px solid #ddd; padding: 6px;">Product</th><th style="text-align:right; border-bottom:1px solid #ddd; padding: 6px;">Qty</th><th style="text-align:right; border-bottom:1px solid #ddd; padding: 6px;">Price</th><th style="text-align:right; border-bottom:1px solid #ddd; padding: 6px;">Line</th></tr></thead><tbody>';
+                        data.items.forEach(item => {
+                            itemsHtml += '<tr>' +
+                                '<td style="padding: 6px;">' + item.product + '</td>' +
+                                '<td style="padding: 6px; text-align:right;">' + item.quantity + '</td>' +
+                                '<td style="padding: 6px; text-align:right;">Rp ' + parseFloat(item.price).toFixed(2) + '</td>' +
+                                '<td style="padding: 6px; text-align:right;">Rp ' + parseFloat(item.line).toFixed(2) + '</td>' +
+                                '</tr>';
+                        });
+                        itemsHtml += '</tbody></table>';
+
+                        const invoiceHtml =
+                            '<p style="margin: 4px 0;">Sale #: <strong>' + data.sale_id + '</strong></p>' +
+                            '<p style="margin: 4px 0;">Date: ' + data.date + '</p>' +
+                            itemsHtml +
+                            '<p style="margin: 12px 0 0 0; font-weight: 700; text-align:right;">Total: Rp ' + parseFloat(data.total).toFixed(2) + '</p>';
+
+                        invoiceEl.innerHTML = invoiceHtml;
+                        document.getElementById('invoiceModal').style.display = 'flex';
+                    }
+
+                    // Keep page open so user sees invoice; cart update is handled by backend cleared state.
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2200);
+                } else {
+                    const message = data.message || 'Checkout failed.';
+                    if (el) el.innerText = message;
+                    showToast(message, false);
+                }
+            }).catch(err => {
+                const message = 'Checkout failed. Check connection or server.';
+                const el = document.getElementById('checkoutMessage');
+                if (el) el.innerText = message;
+                showToast(message, false);
             });
         }
     </script>
